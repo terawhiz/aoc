@@ -23,6 +23,8 @@ std::pair<std::vector<int>, std::vector<int>> parse_file(std::ifstream &file) {
 }
 
 int main() {
+  int total_similarity = 0;
+  int similarity = 0;
   int total_distance = 0;
   int temp_distance = 0;
   std::vector<int> arr1, arr2;
@@ -48,7 +50,14 @@ int main() {
     total_distance += temp_distance;
   }
 
+  // find total similarity
+  for (auto &elem : arr1 ) {
+    int count = std::count(arr2.begin(), arr2.end(), elem);
+    total_similarity += elem * count;
+  }
+
   std::cout << "Total distance: " << total_distance << std::endl;
+  std::cout << "Total similarity: " << total_similarity << std::endl;
 
   return 0;
 }
