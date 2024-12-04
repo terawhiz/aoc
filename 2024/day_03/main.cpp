@@ -17,9 +17,9 @@ std::vector<std::pair<int, int>> parse_input(std::string input, bool part_two) {
   std::smatch match;
 
   if (part_two) {
-    regex = "((mul\\((\\d{1,3}),(\\d{1,3})\\))|(do\\(\\))|(don't\\(\\)))";
+    regex = R"(((mul\((\d{1,3}),(\d{1,3})\))|(do\(\))|(don't\(\))))";
   } else {
-    regex = "(mul\\((\\d{1,3}),(\\d{1,3})\\))";
+    regex = R"((mul\((\d{1,3}),(\d{1,3})\)))";
   }
 
   std::string sub_str = input;
