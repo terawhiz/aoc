@@ -29,7 +29,6 @@ struct pos_t {
 
 unsigned moves = 0;
 unsigned blocks = 0;
-std::deque<pos_t> path;
 
 void print_matrix(matrix_t& matrix) {
     // Print column indices

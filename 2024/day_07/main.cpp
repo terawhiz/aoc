@@ -5,13 +5,16 @@
 #include <algorithm>
 #include <sstream>
 #include <iterator>
-#include <deque>
 #include <cmath>
+#include <unordered_set>
+#include <span>
 
 #define FILENAME "./input"
 // #define FILENAME "./test_input"
 
-void print_test_values_and_numbers(const std::vector<u_int64_t>& test_values, const std::vector<std::deque<u_int64_t>>& test_numbers) {
+std::unordered_set<u_int64_t> checked;
+
+void print_test_values_and_numbers(const std::vector<u_int64_t>& test_values, const std::vector<std::vector<u_int64_t>>& test_numbers) {
     // Print test_values
     std::cout << "Test values: ";
     for (const auto& value : test_values) {
@@ -30,8 +33,7 @@ void print_test_values_and_numbers(const std::vector<u_int64_t>& test_values, co
     }
 }
 
-
-std::pair<std::vector<u_int64_t>,std::vector<std::deque<u_int64_t>>> get_input() {
+std::pair<std::vector<u_int64_t>,std::vector<std::vector<u_int64_t>>> get_input() {
   std::ifstream file(FILENAME);
   if (!file) {
     std::cerr << "Failed to open input file" << std::endl;
@@ -40,11 +42,11 @@ std::pair<std::vector<u_int64_t>,std::vector<std::deque<u_int64_t>>> get_input()
 
   std::string line;
   std::vector<u_int64_t> test_values;
-  std::vector<std::deque<u_int64_t>> test_numbers;
+  std::vector<std::vector<u_int64_t>> test_numbers;
 
   // parse page orders
   while (std::getline(file, line)) {
-    // if (line.empty()) break;
+    if (line.empty()) break;
 
     std::replace(line.begin(), line.end(), ':', ' ');
     
@@ -54,7 +56,7 @@ std::pair<std::vector<u_int64_t>,std::vector<std::deque<u_int64_t>>> get_input()
     stream >> value;
 
     std::istream_iterator<u_int64_t> itr(stream);
-    std::deque<u_int64_t> numbers(itr, std::istream_iterator<u_int64_t>());
+    std::vector<u_int64_t> numbers(itr, std::istream_iterator<u_int64_t>());
     
     test_values.push_back(value);
     test_numbers.push_back(numbers);
@@ -77,9 +79,16 @@ inline u_int64_t concat(u_int64_t a, u_int64_t b) {
     return a * powers[loga] + b;
 }
 
-bool guess(u_int64_t value, std::deque<u_int64_t> numbers, bool run_part_two) {
+bool guess(u_int64_t value, std::span<u_int64_t> numbers, bool run_part_two) {
+
+  // 10ms slower
+  // if (checked.count(value)) {
+  //   return true;
+  // }
+
   if (!(numbers.size() ^ 1)){
     if (numbers[0] == value) {
+      checked.insert(value);
       return true;
     } else return false;
   }
@@ -88,27 +97,36 @@ bool guess(u_int64_t value, std::deque<u_int64_t> numbers, bool run_part_two) {
   u_int64_t b = numbers[1];
 
   // this order makes the program run fast by 20ms
-  numbers.pop_front();
-  numbers.pop_front();
+  // Also HUGE speedup by ditching deque, thanks chino
 
-  numbers.push_front(a+b);
-  if (guess(value, numbers, run_part_two)) return true;
-  numbers.pop_front();
+  numbers[1] = a+b;
+  std::span<u_int64_t> subvec(numbers.data()+1, numbers.size()-1);
+  if (guess(value, subvec, run_part_two)) return true;
+  numbers[0] = a;
+  numbers[1] = b;
+  // if (guess(value, std::vector<u_int64_t>(numbers.begin()+1, numbers.end()), run_part_two)) return true;
 
-  numbers.push_front(a*b);
-  if (guess(value, numbers, run_part_two)) return true;
-  numbers.pop_front();
+  numbers[1] = a*b;
+  subvec = std::span<u_int64_t>(numbers.data()+1, numbers.size()-1);
+  if (guess(value, subvec, run_part_two)) return true;
+  numbers[0] = a;
+  numbers[1] = b;
+  // if (guess(value, std::vector<u_int64_t>(numbers.begin()+1, numbers.end()), run_part_two)) return true;
   
   if (run_part_two) {
-    numbers.push_front(concat(a, b));
+    numbers[1] = concat(a, b);
+    subvec = std::span<u_int64_t>(numbers.data()+1, numbers.size()-1);
+    if (guess(value, subvec, run_part_two)) return true;
+    numbers[0] = a;
+    numbers[1] = b;
     // numbers.push_front(std::stoull(std::to_string(a) + std::to_string(b)));  // 120ms slow
-    if (guess(value, numbers, run_part_two)) return true;
+    // if (guess(value, std::vector<u_int64_t>(numbers.begin()+1, numbers.end()), run_part_two)) return true;
   }
 
   return false;
 }
 
-u_int64_t get_calibration(std::vector<u_int64_t>& values, std::vector<std::deque<u_int64_t>> test_numbers, bool part_two) {
+u_int64_t get_calibration(std::vector<u_int64_t>& values, std::vector<std::vector<u_int64_t>> test_numbers, bool part_two) {
   u_int64_t calibration = 0;
 
   for (u_int64_t i = 0; i < values.size(); ++i) {
@@ -118,7 +136,6 @@ u_int64_t get_calibration(std::vector<u_int64_t>& values, std::vector<std::deque
 
   return calibration;
 }
-
 
 int main() {
   auto [test_values, test_numbers] = get_input();
